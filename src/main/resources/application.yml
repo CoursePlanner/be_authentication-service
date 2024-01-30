@@ -1,0 +1,26 @@
+server:
+  port: 9001
+  servlet:
+    context-path: "/api/authentication-service"
+
+org:
+  course_planner:
+    authentication-service:
+      key-pair-configs:
+        private-key: "privkey.pem"
+        public-key: "pubkey.pem"
+      jwt-configs:
+        token-issuer: "self"
+        token-expiry-in-seconds: 999999
+        refresh-token-expiry-in-seconds: 999999
+    user-service:
+      authorities:
+        user: self-read,self-write,self-update,self-delete
+        admin: other-read,other-write,other-update,other-delete
+        superuser: all-read,all-write,all-update,all-delete
+
+
+logging:
+  level:
+    root: ERROR
+    org.course_planner: INFO
