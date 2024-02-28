@@ -1,0 +1,60 @@
+name: Compile Project
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: CoursePlanner_Env
+
+    env:
+      DH_UNAME: ${{ secrets.DH_UNAME }}
+      DH_TOKEN: ${{ secrets.DH_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      run: mvn -B package -DskipTests=true --file pom.xml
+
+    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+#    - name: Update dependency graph
+#      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ env.DH_UNAME }}
+        password: ${{ env.DH_TOKEN }}
+
+    - name: Extract Only Repo Name
+      run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)" >> $GITHUB_ENV
+
+    - name: Generate Build ID
+      id: date
+      run: echo "::set-output name=date::$(date +'%s')"
+
+    - name: Build Image and Push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: v1v3k6/cp_${{ env.REPO_NAME }}:${{ steps.date.outputs.date }}
